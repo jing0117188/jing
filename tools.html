@@ -2,8 +2,16 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="theme-color" content="#f4f7f9">
+
+<!-- ============ PWA 变 App 核心代码 ============ -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="万能工具箱">
+<link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3524/3524659.png">
+<!-- ============================================== -->
+
 <title>个人万能工具箱</title>
 <style>
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -192,6 +200,27 @@
 </nav>
 
 <script>
+// 动态生成 PWA manifest（将 App 的配置以代码形式注入）
+const manifest = {
+  name: '万能工具箱',
+  short_name: '工具箱',
+  start_url: './tools.html', // 确保指向当前文件
+  display: 'standalone',
+  background_color: '#f4f7f9',
+  theme_color: '#3b82f6',
+  icons: [{
+    src: 'https://cdn-icons-png.flaticon.com/512/3524/3524659.png',
+    sizes: '512x512',
+    type: 'image/png'
+  }]
+};
+const manifestBlob = new Blob([JSON.stringify(manifest)], {type: 'application/json'});
+const manifestURL = URL.createObjectURL(manifestBlob);
+const link = document.createElement('link');
+link.rel = 'manifest';
+link.href = manifestURL;
+document.head.appendChild(link);
+
 // 安全存储
 var Store = (function(){
   var mem = {}, ok = true;
