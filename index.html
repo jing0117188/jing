@@ -241,8 +241,8 @@
       </div>
       <button class="ghost" id="logoutBtn">退出 / 切换账号</button>
       <div class="tip">
-        这是纯前端演示页：账号数据只存在你本机浏览器里，刷新不会丢（无痕模式下除外）。<br>
-        影视区播放的是页面内生成的动画，换成自己的视频只需改一行配置。
+        这是纯前端演示页：账号数据只存在你本机浏览器里。<br>
+        影视区播放的是真实的测试视频，手机端请手动点击播放键。
       </div>
     </section>
   </main>
@@ -271,7 +271,7 @@
       <p id="playerDesc"></p>
       <div class="play-bar">
         <button id="playBtn">⏸ 暂停</button>
-        <span class="hint">内置演示动画</span>
+        <span class="hint" id="playHint">视频加载中...</span>
       </div>
     </div>
   </div>
@@ -298,7 +298,7 @@
 </div>
 
 <script>
-/* ================= 安全存储：无痕模式下也不会崩 ================= */
+/* ================= 安全存储 ================= */
 var Store = (function(){
   var mem = {}, ok = true;
   try { localStorage.setItem('__t__','1'); localStorage.removeItem('__t__'); }
@@ -313,7 +313,7 @@ var Store = (function(){
 var $ = function(s){ return document.querySelector(s); };
 var $$ = function(s){ return Array.prototype.slice.call(document.querySelectorAll(s)); };
 
-/* ================= 封面生成（内联 SVG，不联网） ================= */
+/* ================= 封面生成 ================= */
 function cover(title, emoji, c1, c2){
   var svg =
     '<svg xmlns="http://www.w3.org/2000/svg" width="300" height="420" viewBox="0 0 300 420">' +
@@ -328,12 +328,8 @@ function cover(title, emoji, c1, c2){
   return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
 }
 
-/* ================= 内容数据：改这里就能换成自己的 ================= */
+/* ================= 内容数据 ================= */
 var MOVIES = [
-  { title:'星际穿越者', tag:'太空 · 动画', emoji:'🚀', c1:'#1b2a6b', c2:'#6c7bff', anim:'stars',
-  src:'https://www.w3schools.com/html/mov_bbb.mp4',
-  desc:'一艘飞船穿过星海，光点在身后拉成细线。点击播放看演示动画。' },
-  var MOVIES = [
   { title:'大雄兔', tag:'动画 · 高清', emoji:'🐰', c1:'#1b2a6b', c2:'#6c7bff', 
     src:'https://www.w3schools.com/html/mov_bbb.mp4',
     desc:'开源动画电影《Big Buck Bunny》片段，点击播放键即可观看。' },
@@ -350,6 +346,7 @@ var MOVIES = [
     src:'https://media.w3.org/2010/05/bunny/trailer.mp4',
     desc:'经典的动画测试片段，请点击播放键观看。' }
 ];
+
 var BOOKS = [
   { title:'山海拾遗', author:'佚名', emoji:'⛰️', c1:'#1d2b4a', c2:'#3f7f8c',
     intro:'古老的传说，在某个夜晚重新醒来。',
@@ -365,12 +362,7 @@ var BOOKS = [
 只有桥头那一盏，始终是暗的。
 阿禾提着一盏旧油灯走过去，风很大，火苗却一点也不摇。
 她蹲下身，把灯放在石阶上。
-那一刻，桥下的水声忽然停了。` },
-      { title:'第三章 · 桥下', text:
-`水声停过之后，四周安静得能听见自己的心跳。
-阿禾往桥下看了一眼。
-黑漆漆的水面上，浮着一点很小的光，慢慢地朝她这边移过来。
-她握紧了油灯的把手，没有退。` }
+那一刻，桥下的水声忽然停了。` }
     ]},
   { title:'午夜咖啡馆', author:'林间', emoji:'☕', c1:'#2b1d2f', c2:'#a8567a',
     intro:'每晚十二点开门，只招待有故事的人。',
@@ -394,13 +386,7 @@ var BOOKS = [
 `凌晨三点，屏幕上还亮着那个红色的报错。
 他揉了揉眼睛，把咖啡喝到只剩杯底。
 问题一定在某个地方，只是还没被看见。
-这大概是写代码最真实的样子——不是酷炫，是耐心。` },
-      { title:'第二章 · 跑通了', text:
-`改了第七遍之后，终端终于安静地吐出一行绿色的字。
-他往后靠在椅背上，长长地出了一口气。
-窗外的天已经开始泛白。
-他笑了笑，把这句话记进了笔记：
-“所有跑通的程序背后，都有一堆看不见的失败。”` }
+这大概是写代码最真实的样子——不是酷炫，是耐心。` }
     ]}
 ];
 
@@ -524,7 +510,7 @@ document.addEventListener('click', function(e){
   else openBook(idx, 0);
 });
 
-/* ================= 播放器（Canvas 动画） ================= */
+/* ================= 播放器 ================= */
 var cv = $('#cv'), ctx = cv.getContext('2d');
 var videoEl = $('#videoEl');
 var rafId = null, playing = false, elapsed = 0, lastTs = 0, animFn = null, curMovie = 0;
@@ -532,9 +518,6 @@ var rafId = null, playing = false, elapsed = 0, lastTs = 0, animFn = null, curMo
 var ANIMS = {
   stars: function(c, w, h, t){
     c.fillStyle = '#05060f'; c.fillRect(0,0,w,h);
-    var g = c.createRadialGradient(w/2,h/2,0,w/2,h/2,Math.max(w,h)*.65);
-    g.addColorStop(0,'rgba(108,123,255,.22)'); g.addColorStop(1,'rgba(5,6,15,0)');
-    c.fillStyle = g; c.fillRect(0,0,w,h);
     for(var i=0;i<90;i++){
       var a = i * 2.39996323;
       var p = ((t*0.16) + i/90) % 1;
@@ -545,73 +528,8 @@ var ANIMS = {
       c.fillStyle = 'rgba(200,220,255,' + p.toFixed(3) + ')';
       c.fillRect(x, y, s, s);
     }
-  },
-  rain: function(c, w, h, t){
-    c.fillStyle = '#0a1120'; c.fillRect(0,0,w,h);
-    var g = c.createRadialGradient(w*0.5,h*0.25,0,w*0.5,h*0.25,w*0.7);
-    g.addColorStop(0,'rgba(255,190,120,.16)'); g.addColorStop(1,'rgba(10,17,32,0)');
-    c.fillStyle = g; c.fillRect(0,0,w,h);
-    for(var i=0;i<80;i++){
-      var p = ((t*0.85) + i*0.137) % 1;
-      var x = ((i*97)%100)/100 * (w+120) - 40 + p*50;
-      var y = p*(h+60) - 20;
-      c.strokeStyle = 'rgba(160,200,255,.45)';
-      c.lineWidth = 1;
-      c.beginPath(); c.moveTo(x, y); c.lineTo(x-7, y+16); c.stroke();
-    }
-    c.fillStyle = 'rgba(28,48,78,.75)';
-    c.fillRect(0, h*0.82, w, h*0.18);
-  },
-  wave: function(c, w, h, t){
-    var g = c.createLinearGradient(0,0,0,h);
-    g.addColorStop(0,'#3a1b4a'); g.addColorStop(.55,'#ff6b9d'); g.addColorStop(1,'#2a1a3a');
-    c.fillStyle = g; c.fillRect(0,0,w,h);
-    c.fillStyle = 'rgba(255,225,190,.92)';
-    c.beginPath();
-    c.arc(w*0.68, h*0.34, Math.min(w,h)*0.09, 0, Math.PI*2);
-    c.fill();
-    for(var k=0;k<3;k++){
-      c.beginPath();
-      c.moveTo(0, h);
-      for(var x=0;x<=w;x+=6){
-        var y = h*0.6 + k*h*0.085 + Math.sin(x*0.02 + t*1.2 + k)*10;
-        c.lineTo(x, y);
-      }
-      c.lineTo(w, h); c.closePath();
-      c.fillStyle = 'rgba(255,255,255,' + (0.06 + k*0.05) + ')';
-      c.fill();
-    }
-  },
-  snow: function(c, w, h, t){
-    c.fillStyle = '#0d1c28'; c.fillRect(0,0,w,h);
-    for(var i=0;i<70;i++){
-      var p = ((t*0.35) + i*0.089) % 1;
-      var x = (((i*53)%100)/100)*w + Math.sin(t + i)*12;
-      var y = p*h;
-      c.fillStyle = 'rgba(220,240,255,' + (0.25 + p*0.5).toFixed(2) + ')';
-      c.beginPath(); c.arc(x, y, 1.6, 0, Math.PI*2); c.fill();
-    }
-    c.fillStyle = 'rgba(40,90,130,.5)';
-    c.fillRect(0, h*0.72, w, h*0.28);
   }
 };
-
-function fitCanvas(){
-  var rect = cv.getBoundingClientRect();
-  var dpr = Math.min(window.devicePixelRatio || 1, 2);
-  if(rect.width < 2) return;
-  cv.width  = Math.round(rect.width  * dpr);
-  cv.height = Math.round(rect.height * dpr);
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-}
-
-function loop(ts){
-  if(!lastTs) lastTs = ts;
-  elapsed += (ts - lastTs) / 1000;
-  lastTs = ts;
-  if(animFn) animFn(ctx, cv.clientWidth, cv.clientHeight, elapsed);
-  rafId = requestAnimationFrame(loop);
-}
 
 function playAnim(){
   if(playing || !animFn) return;
@@ -624,6 +542,13 @@ function pauseAnim(){
   playing = false;
   cancelAnimationFrame(rafId);
   $('#playBtn').textContent = '▶ 播放';
+}
+function loop(ts){
+  if(!lastTs) lastTs = ts;
+  elapsed += (ts - lastTs) / 1000;
+  lastTs = ts;
+  if(animFn) animFn(ctx, cv.clientWidth, cv.clientHeight, elapsed);
+  rafId = requestAnimationFrame(loop);
 }
 
 $('#playBtn').addEventListener('click', function(){
@@ -642,8 +567,8 @@ function openPlayer(i){
   $('#playerTitle').textContent = '正在播放';
   $('#playerName').textContent  = m.title;
   $('#playerDesc').textContent  = m.desc || '';
+  $('#playHint').textContent = '手机端请手动点击 ▶ 播放';
 
-  // 有真实视频地址就播视频，没有就播内置动画
   if(m.src){
     cv.classList.add('hidden');
     videoEl.classList.remove('hidden');
@@ -653,19 +578,13 @@ function openPlayer(i){
   } else {
     videoEl.classList.add('hidden');
     cv.classList.remove('hidden');
-    animFn = ANIMS[m.anim] || ANIMS.stars;
+    animFn = ANIMS.stars;
     elapsed = 0; playing = false;
     $('#playBtn').textContent = '⏸ 暂停';
   }
 
   $('#playerModal').classList.add('show');
-
-  requestAnimationFrame(function(){
-    if(!m.src){
-      fitCanvas();
-      playAnim();
-    }
-  });
+  if(!m.src){ playAnim(); }
 }
 
 function closePlayer(){
@@ -675,12 +594,6 @@ function closePlayer(){
   try { videoEl.load(); } catch(e){}
   $('#playerModal').classList.remove('show');
 }
-
-window.addEventListener('resize', function(){
-  if($('#playerModal').classList.contains('show') && !videoEl.classList.contains('hidden') === false){
-    fitCanvas();
-  }
-});
 
 /* ================= 阅读器 ================= */
 var curBook = 0, curChapter = 0, fontSize = 17;
@@ -742,12 +655,9 @@ $('#readerModal').addEventListener('click', function(e){
 
 /* ================= 启动 ================= */
 (function init(){
-  // 已登录过就直接进入
   if(curUser && users[curUser]){
     enterApp(curUser, false);
   }
-  // 防止 iOS 双击缩放
-  document.addEventListener('dblclick', function(e){ e.preventDefault(); }, { passive:false });
 })();
 </script>
 </body>
